@@ -17,7 +17,6 @@ namespace Micial.Cbor.Writer
         private const int DefaultCapacitySentinel = -1;
         private static readonly ArrayPool<byte> s_bufferPool = ArrayPool<byte>.Create();
 
-        private byte[] _buffer;
         private int _offset;
 
         private Stack<StackFrame>? _nestedDataItems;
@@ -63,18 +62,6 @@ namespace Micial.Cbor.Writer
         /// Defaults to <see cref="CborConformanceMode.Strict" /> conformance mode.</param>
         /// <param name="convertIndefiniteLengthEncodings"><see langword="true" /> to enable automatically converting indefinite-length encodings into definite-length equivalents and allow use of indefinite-length write APIs in conformance modes that otherwise do not permit it; otherwise, <see langword="false" />.</param>
         /// <param name="allowMultipleRootLevelValues"><see langword="true" /> to allow multiple root-level values to be written by the writer; otherwise, <see langword="false" />.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="conformanceMode" /> is not a defined <see cref="CborConformanceMode" />.</exception>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public CborWriter(CborConformanceMode conformanceMode, bool convertIndefiniteLengthEncodings, bool allowMultipleRootLevelValues)
-            : this(conformanceMode, convertIndefiniteLengthEncodings, allowMultipleRootLevelValues, DefaultCapacitySentinel)
-        {
-        }
-
-        /// <summary>Initializes a new instance of <see cref="CborWriter" /> class using the specified configuration.</summary>
-        /// <param name="conformanceMode">One of the enumeration values that specifies the guidance on the conformance checks performed on the encoded data.
-        /// Defaults to <see cref="CborConformanceMode.Strict" /> conformance mode.</param>
-        /// <param name="convertIndefiniteLengthEncodings"><see langword="true" /> to enable automatically converting indefinite-length encodings into definite-length equivalents and allow use of indefinite-length write APIs in conformance modes that otherwise do not permit it; otherwise, <see langword="false" />.</param>
-        /// <param name="allowMultipleRootLevelValues"><see langword="true" /> to allow multiple root-level values to be written by the writer; otherwise, <see langword="false" />.</param>
         /// <param name="initialCapacity">The initial capacity of the underlying buffer. The value -1 can be used to use the default capacity.</param>
         /// <exception cref="ArgumentOutOfRangeException">
         /// <para><paramref name="conformanceMode" /> is not a defined <see cref="CborConformanceMode" />.</para>
@@ -84,8 +71,7 @@ namespace Micial.Cbor.Writer
         public CborWriter(
             CborConformanceMode conformanceMode = CborConformanceMode.Strict,
             bool convertIndefiniteLengthEncodings = false,
-            bool allowMultipleRootLevelValues = false,
-            int initialCapacity = DefaultCapacitySentinel)
+            bool allowMultipleRootLevelValues = false)
         {
             CborConformanceModeHelpers.Validate(conformanceMode);
 
@@ -93,13 +79,7 @@ namespace Micial.Cbor.Writer
             ConvertIndefiniteLengthEncodings = convertIndefiniteLengthEncodings;
             AllowMultipleRootLevelValues = allowMultipleRootLevelValues;
             _definiteLength = allowMultipleRootLevelValues ? null : (int?)1;
-
-            if (initialCapacity == DefaultCapacitySentinel || initialCapacity == 0)
-                _buffer = Array.Empty<byte>();
-            else if (initialCapacity < -1)
-                throw new ArgumentOutOfRangeException(nameof(initialCapacity));
-            else
-                _buffer = new byte[initialCapacity];
+            
         }
 
         /// <summary>Resets the writer to have no data, without releasing resources.</summary>
@@ -107,8 +87,6 @@ namespace Micial.Cbor.Writer
         {
             if (_offset > 0)
             {
-                Array.Clear(_buffer, 0, _offset);
-
                 _offset = 0;
                 _nestedDataItems?.Clear();
                 _currentMajorType = null;
@@ -130,23 +108,23 @@ namespace Micial.Cbor.Writer
         /// <exception cref="ArgumentException"><para><paramref name="encodedValue" /> is not a well-formed CBOR encoding.</para>
         /// <para>-or-</para>
         /// <para><paramref name="encodedValue" /> is not valid under the current conformance mode.</para></exception>
-        public void WriteEncodedValue(ReadOnlySpan<byte> encodedValue)
+        public void WriteEncodedValue(ReadOnlySpan<byte> encodedValue, Span<byte> _buffer)
         {
             ValidateEncoding(encodedValue, ConformanceMode);
-            EnsureWriteCapacity(encodedValue.Length);
+            EnsureWriteCapacity(encodedValue.Length, _buffer);
 
             // even though the encoding might be valid CBOR, it might not be valid within the current writer context.
             // E.g. we're at the end of a definite-length collection or writing integers in an indefinite-length string.
             // For this reason we write the initial byte separately and perform the usual validation.
             CborInitialByte initialByte = new CborInitialByte(encodedValue[0]);
-            WriteInitialByte(initialByte);
+            WriteInitialByte(initialByte, _buffer);
 
             // now copy any remaining bytes
             encodedValue = encodedValue.Slice(1);
 
             if (!encodedValue.IsEmpty)
             {
-                encodedValue.CopyTo(_buffer.AsSpan(_offset));
+                encodedValue.CopyTo(_buffer[_offset..]);
                 _offset += encodedValue.Length;
             }
 
@@ -180,24 +158,16 @@ namespace Micial.Cbor.Writer
         /// <summary>Returns a new array containing the encoded value.</summary>
         /// <returns>A precisely-sized array containing the encoded value.</returns>
         /// <exception cref="InvalidOperationException">The writer does not contain a complete CBOR value or sequence of root-level values.</exception>
-        public byte[] Encode() => GetSpanEncoding().ToArray();
+        public byte[] EncodeArray(Span<byte> _buffer) => GetSpanEncoding(_buffer).ToArray();
 
         /// <summary>Writes the encoded representation of the data to <paramref name="destination" />.</summary>
         /// <param name="destination">The buffer in which to write.</param>
         /// <returns>The number of bytes written to <paramref name="destination" />.</returns>
         /// <exception cref="InvalidOperationException">The writer does not contain a complete CBOR value or sequence of root-level values.</exception>
         /// <exception cref="ArgumentException">The destination buffer is not large enough to hold the encoded value.</exception>
-        public int Encode(Span<byte> destination)
+        public int Encode()
         {
-            ReadOnlySpan<byte> encoding = GetSpanEncoding();
-
-            if (encoding.Length > destination.Length)
-            {
-                throw new ArgumentException(MSR.Argument_EncodeDestinationTooSmall, nameof(destination));
-            }
-
-            encoding.CopyTo(destination);
-            return encoding.Length;
+            return _offset;
         }
 
         /// <summary>Attempts to write the encoded representation of the data to <paramref name="destination" />.</summary>
@@ -205,9 +175,9 @@ namespace Micial.Cbor.Writer
         /// <param name="bytesWritten">When this method returns, contains the number of bytes written to <paramref name="destination" />.</param>
         /// <returns><see langword="true" /> if the encode succeeded, <see langword="false" /> if <paramref name="destination" /> is too small.</returns>
         /// <exception cref="InvalidOperationException">The writer does not contain a complete CBOR value or sequence of root-level values.</exception>
-        public bool TryEncode(Span<byte> destination, out int bytesWritten)
+        public bool TryEncode(Span<byte> destination, out int bytesWritten, Span<byte> _buffer)
         {
-            ReadOnlySpan<byte> encoding = GetSpanEncoding();
+            ReadOnlySpan<byte> encoding = GetSpanEncoding(_buffer);
 
             if (encoding.Length > destination.Length)
             {
@@ -220,17 +190,17 @@ namespace Micial.Cbor.Writer
             return true;
         }
 
-        private ReadOnlySpan<byte> GetSpanEncoding()
+        private ReadOnlySpan<byte> GetSpanEncoding(Span<byte> _buffer)
         {
             if (!IsWriteCompleted)
             {
                 throw new InvalidOperationException(MSR.Cbor_Writer_IncompleteCborDocument);
             }
 
-            return new ReadOnlySpan<byte>(_buffer, 0, _offset);
+            return _buffer[.._offset];
         }
 
-        private void EnsureWriteCapacity(int pendingCount)
+        private void EnsureWriteCapacity(int pendingCount, Span<byte> _buffer)
         {
             if (pendingCount < 0)
             {
@@ -241,19 +211,8 @@ namespace Micial.Cbor.Writer
             int requiredCapacity = _offset + pendingCount;
             if (currentCapacity < requiredCapacity)
             {
-                int newCapacity = currentCapacity == 0 ? 1024 : currentCapacity * 2;
-                const uint MaxArrayLength = 0x7FFFFFC7; // Array.MaxLength
-#if NET
-                Debug.Assert(MaxArrayLength == Array.MaxLength);
-#endif
-                if ((uint)newCapacity > MaxArrayLength || newCapacity < requiredCapacity)
-                {
-                    newCapacity = requiredCapacity;
-                }
 
-                byte[] newBuffer = new byte[newCapacity];
-                new ReadOnlySpan<byte>(_buffer, 0, _offset).CopyTo(newBuffer);
-                _buffer = newBuffer;
+                throw new Exception("Not enough buffer length");
             }
         }
 
@@ -287,7 +246,7 @@ namespace Micial.Cbor.Writer
             _isTagContext = false;
         }
 
-        private void PopDataItem(CborMajorType typeToPop)
+        private void PopDataItem(CborMajorType typeToPop, Span<byte> _buffer)
         {
             // Validate that the pop operation can be performed
             if (typeToPop != _currentMajorType)
@@ -325,7 +284,7 @@ namespace Micial.Cbor.Writer
 
             if (_definiteLength == null)
             {
-                CompleteIndefiniteLengthWrite(typeToPop);
+                CompleteIndefiniteLengthWrite(typeToPop, _buffer);
             }
 
             // pop writer state
@@ -360,7 +319,7 @@ namespace Micial.Cbor.Writer
             _isTagContext = false;
         }
 
-        private void WriteInitialByte(CborInitialByte initialByte)
+        private void WriteInitialByte(CborInitialByte initialByte, Span<byte> _buffer)
         {
             if (_definiteLength - _itemsWritten == 0)
             {
@@ -387,7 +346,7 @@ namespace Micial.Cbor.Writer
             _buffer[_offset++] = initialByte.InitialByte;
         }
 
-        private void CompleteIndefiniteLengthWrite(CborMajorType type)
+        private void CompleteIndefiniteLengthWrite(CborMajorType type, Span<byte> _buffer)
         {
             Debug.Assert(_definiteLength == null);
 
@@ -415,7 +374,7 @@ namespace Micial.Cbor.Writer
             else
             {
                 // using indefinite-length encoding, append a break byte to the existing encoding
-                EnsureWriteCapacity(1);
+                EnsureWriteCapacity(1, _buffer);
                 _buffer[_offset++] = CborInitialByte.IndefiniteLengthBreakByte;
             }
         }
