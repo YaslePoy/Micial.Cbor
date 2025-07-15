@@ -3,6 +3,12 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
         <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>9.0.7</Version>
+        <Title>Micial.Cbor</Title>
+        <Authors>YaslePoy</Authors>
+        <Description>Faster version of System.Formats.Cbor that uses preallocated memory instead of allocating in constructor</Description>
+        <RepositoryUrl>https://github.com/YaslePoy/Micial.Cbor</RepositoryUrl>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
