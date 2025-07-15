@@ -17,7 +17,7 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void IsWriteCompleted_OnWrittenPrimitive_ShouldBeTrue()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.False(writer.IsWriteCompleted);
             writer.WriteInt64(42);
             Assert.True(writer.IsWriteCompleted);
@@ -26,14 +26,14 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void GetEncoding_OnInCompleteValue_ShouldThrowInvalidOperationExceptoin()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.Throws<InvalidOperationException>(() => writer.Encode());
         }
 
         [Fact]
         public static void CborWriter_WritingTwoPrimitiveValues_ShouldThrowInvalidOperationException()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteInt64(42);
             int bytesWritten = writer.BytesWritten;
             Assert.Throws<InvalidOperationException>(() => writer.WriteTextString("lorem ipsum"));
@@ -75,7 +75,7 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void BytesWritten_SingleValue_ShouldReturnBytesWritten()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.Equal(0, writer.BytesWritten);
             writer.WriteTextString("test");
             Assert.Equal(5, writer.BytesWritten);
@@ -128,14 +128,14 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void ConformanceMode_DefaultValue_ShouldEqualStrict()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.Equal(CborConformanceMode.Strict, writer.ConformanceMode);
         }
 
         [Fact]
         public static void ConvertIndefiniteLengthEncodings_DefaultValue_ShouldEqualFalse()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.False(writer.ConvertIndefiniteLengthEncodings);
         }
 
@@ -145,7 +145,7 @@ namespace System.Formats.Cbor.Tests
         {
             byte[] encodedValue = hexEncodedValue.HexToByteArray();
 
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteEncodedValue(encodedValue);
 
             string hexResult = writer.Encode().ByteArrayToHex();
@@ -158,7 +158,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(new object[] { new object[] { 1, 2, 3 } })]
         public static void EncodeSpan_HappyPath(object value)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Helpers.WriteValue(writer, value);
 
             byte[] target = new byte[writer.BytesWritten];
@@ -175,7 +175,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(new object[] { new object[] { 1, 2, 3 } })]
         public static void EncodeSpan_DestinationTooSmall_ShouldThrowArgumentException(object value)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Helpers.WriteValue(writer, value);
 
             byte[] encoding = writer.Encode();
@@ -191,7 +191,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(new object[] { new object[] { 1, 2, 3 } })]
         public static void TryEncode_HappyPath(object value)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Helpers.WriteValue(writer, value);
 
             byte[] encoding = writer.Encode();
@@ -210,7 +210,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(new object[] { new object[] { 1, 2, 3 } })]
         public static void TryEncode_DestinationTooSmall_ShouldReturnFalse(object value)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Helpers.WriteValue(writer, value);
 
             byte[] encoding = writer.Encode();
@@ -229,7 +229,7 @@ namespace System.Formats.Cbor.Tests
         {
             byte[] encodedValue = hexEncodedValue.HexToByteArray();
 
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteStartArray(3);
             writer.WriteInt64(1);
             writer.WriteEncodedValue(encodedValue);
@@ -291,7 +291,7 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void WriteEncodedValue_BadIndefiniteLengthStringValue_ShouldThrowInvalidOperationException()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteStartIndefiniteLengthTextString();
             Assert.Throws<InvalidOperationException>(() => writer.WriteEncodedValue(new byte[] { 0x01 }));
         }
@@ -299,7 +299,7 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void WriteEncodedValue_AtEndOfDefiniteLengthCollection_ShouldThrowInvalidOperationException()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteInt64(0);
             Assert.Throws<InvalidOperationException>(() => writer.WriteEncodedValue(new byte[] { 0x01 }));
         }
@@ -309,7 +309,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteEncodedValue_InvalidCbor_ShouldThrowArgumentException(string hexEncodedInput)
         {
             byte[] encodedInput = hexEncodedInput.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.Throws<ArgumentException>(() => writer.WriteEncodedValue(encodedInput));
         }
 
@@ -327,7 +327,7 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void WriteEncodedValue_ValidPayloadWithTrailingBytes_ShouldThrowArgumentException()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.Throws<ArgumentException>(() => writer.WriteEncodedValue(new byte[] { 0x01, 0x01 }));
         }
 
@@ -354,10 +354,10 @@ namespace System.Formats.Cbor.Tests
         public static void InitialCapacity_ShouldSetInitialBuffer(int capacity, int expectedBufferLength)
         {
             CborWriter writer = new CborWriter(initialCapacity: capacity);
-            byte[]? buffer = (byte[]?)typeof(CborWriter).GetField("_buffer", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(writer);
+            Memory<byte>? buffer = (Memory<byte>?)typeof(CborWriter).GetField("_buffer", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(writer);
 
             Assert.NotNull(buffer);
-            Assert.Equal(expectedBufferLength, buffer.Length);
+            Assert.Equal(expectedBufferLength, buffer.Value.Length);
         }
 
         [Theory]

@@ -104,7 +104,7 @@ namespace Micial.Cbor.Writer
                 if (!keyEncodingRanges.Add(currentKey))
                 {
                     // reset writer state to right before the offending key write
-                    _buffer.AsSpan(currentKey.Offset, _offset).Clear();
+                    _buffer.Span.Slice(currentKey.Offset, _offset).Clear();
                     _offset = currentKey.Offset;
 
                     throw new InvalidOperationException(MSR.Format(MSR.Cbor_ConformanceMode_ContainsDuplicateKeys, ConformanceMode));
@@ -157,7 +157,7 @@ namespace Micial.Cbor.Writer
 
                 // copy sorted ranges to temporary buffer
                 int totalMapPayloadEncodingLength = _offset - _frameOffset;
-                Span<byte> source = _buffer.AsSpan();
+                Span<byte> source = _buffer.Span;
 
                 byte[] tempBuffer = s_bufferPool.Rent(totalMapPayloadEncodingLength);
                 Span<byte> tmpSpan = tempBuffer.AsSpan(0, totalMapPayloadEncodingLength);
@@ -270,12 +270,12 @@ namespace Micial.Cbor.Writer
 
             private Span<byte> GetKeyEncoding((int Offset, int Length) range)
             {
-                return _writer._buffer.AsSpan(range.Offset, range.Length);
+                return _writer._buffer.Span.Slice(range.Offset, range.Length);
             }
 
             private Span<byte> GetKeyEncoding(in KeyValuePairEncodingRange range)
             {
-                return _writer._buffer.AsSpan(range.Offset, range.KeyLength);
+                return _writer._buffer.Span.Slice(range.Offset, range.KeyLength);
             }
 
             public int GetHashCode((int Offset, int Length) range)

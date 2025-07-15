@@ -24,11 +24,11 @@ namespace Micial.Cbor.Writer
             WriteInitialByte(new CborInitialByte(CborMajorType.Simple, CborAdditionalInfo.Additional16BitData));
             if (HalfHelpers.HalfIsNaN(value) && !CborConformanceModeHelpers.RequiresPreservingFloatPrecision(ConformanceMode))
             {
-                BinaryPrimitives.WriteUInt16BigEndian(_buffer.AsSpan(_offset), PositiveQNaNBitsHalf);
+                BinaryPrimitives.WriteUInt16BigEndian(_buffer.Span.Slice(_offset), PositiveQNaNBitsHalf);
             }
             else
             {
-                CborHelpers.WriteHalfBigEndian(_buffer.AsSpan(_offset), value);
+                CborHelpers.WriteHalfBigEndian(_buffer.Span.Slice(_offset), value);
             }
             _offset += sizeof(ushort);
             AdvanceDataItemCounters();

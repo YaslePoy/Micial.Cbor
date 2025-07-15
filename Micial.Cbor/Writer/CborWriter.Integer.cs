@@ -94,27 +94,27 @@ namespace Micial.Cbor.Writer
             {
                 EnsureWriteCapacity(1 + sizeof(byte));
                 WriteInitialByte(new CborInitialByte(type, CborAdditionalInfo.Additional8BitData));
-                _buffer[_offset++] = (byte)value;
+                _buffer.Span[_offset++] = (byte)value;
             }
             else if (value <= ushort.MaxValue)
             {
                 EnsureWriteCapacity(1 + sizeof(ushort));
                 WriteInitialByte(new CborInitialByte(type, CborAdditionalInfo.Additional16BitData));
-                BinaryPrimitives.WriteUInt16BigEndian(_buffer.AsSpan(_offset), (ushort)value);
+                BinaryPrimitives.WriteUInt16BigEndian(_buffer.Span.Slice(_offset), (ushort)value);
                 _offset += sizeof(ushort);
             }
             else if (value <= uint.MaxValue)
             {
                 EnsureWriteCapacity(1 + sizeof(uint));
                 WriteInitialByte(new CborInitialByte(type, CborAdditionalInfo.Additional32BitData));
-                BinaryPrimitives.WriteUInt32BigEndian(_buffer.AsSpan(_offset), (uint)value);
+                BinaryPrimitives.WriteUInt32BigEndian(_buffer.Span.Slice(_offset), (uint)value);
                 _offset += sizeof(uint);
             }
             else
             {
                 EnsureWriteCapacity(1 + sizeof(ulong));
                 WriteInitialByte(new CborInitialByte(type, CborAdditionalInfo.Additional64BitData));
-                BinaryPrimitives.WriteUInt64BigEndian(_buffer.AsSpan(_offset), value);
+                BinaryPrimitives.WriteUInt64BigEndian(_buffer.Span.Slice(_offset), value);
                 _offset += sizeof(ulong);
             }
         }

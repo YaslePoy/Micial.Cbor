@@ -80,8 +80,8 @@ namespace Micial.Cbor.Writer
                 // length encoding requires more than 1 byte, need to shift encoded elements to the right
                 EnsureWriteCapacity(bytesToShift);
 
-                ReadOnlySpan<byte> elementEncoding = _buffer.AsSpan(_frameOffset, currentOffset - _frameOffset);
-                Span<byte> target = _buffer.AsSpan(_frameOffset + bytesToShift, currentOffset - _frameOffset);
+                ReadOnlySpan<byte> elementEncoding = _buffer.Span.Slice(_frameOffset, currentOffset - _frameOffset);
+                Span<byte> target = _buffer.Span.Slice(_frameOffset + bytesToShift, currentOffset - _frameOffset);
                 elementEncoding.CopyTo(target);
             }
 

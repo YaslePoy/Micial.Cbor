@@ -54,7 +54,7 @@ namespace Micial.Cbor.Writer
                 _currentIndefiniteLengthStringRanges.Add((_offset, value.Length));
             }
 
-            value.CopyTo(_buffer.AsSpan(_offset));
+            value.CopyTo(_buffer.Span.Slice(_offset));
             _offset += value.Length;
             AdvanceDataItemCounters();
         }
@@ -151,7 +151,7 @@ namespace Micial.Cbor.Writer
                 _currentIndefiniteLengthStringRanges.Add((_offset, value.Length));
             }
 
-            CborHelpers.GetBytes(utf8Encoding, value, _buffer.AsSpan(_offset, length));
+            CborHelpers.GetBytes(utf8Encoding, value, _buffer.Span.Slice(_offset, length));
             _offset += length;
             AdvanceDataItemCounters();
         }
@@ -210,7 +210,7 @@ namespace Micial.Cbor.Writer
                 definiteLength += length;
             }
 
-            Span<byte> buffer = _buffer.AsSpan();
+            Span<byte> buffer = _buffer.Span;
 
             // copy chunks to a temporary buffer
             byte[] tempBuffer = s_bufferPool.Rent(definiteLength);

@@ -32,7 +32,9 @@ namespace Micial.Cbor.Writer
         private int? _currentValueOffset; // offset for the current value encoding
         private bool _keysRequireSorting; // tracks whether key/value pair encodings need to be sorted
         private List<KeyValuePairEncodingRange>? _keyValuePairEncodingRanges; // all key/value pair encoding ranges
-        private HashSet<(int Offset, int Length)>? _keyEncodingRanges; // all key encoding ranges up to encoding equality
+
+        private HashSet<(int Offset, int Length)>?
+            _keyEncodingRanges; // all key encoding ranges up to encoding equality
 
         /// <summary>Gets the conformance mode used by this writer.</summary>
         /// <value>One of the enumeration values that represent the conformance mode used by this writer.</value>
@@ -57,7 +59,7 @@ namespace Micial.Cbor.Writer
         /// <summary>Declares whether the writer has completed writing a complete root-level CBOR document, or sequence of root-level CBOR documents.</summary>
         /// <value><see langword="true" /> if the writer has completed writing a complete root-level CBOR document, or sequence of root-level CBOR documents; <see langword="false" /> otherwise.</value>
         public bool IsWriteCompleted => _currentMajorType is null && _itemsWritten > 0;
-        
+
         /// <summary>Initializes a new instance of <see cref="CborWriter" /> class using the specified configuration.</summary>
         /// <param name="conformanceMode">One of the enumeration values that specifies the guidance on the conformance checks performed on the encoded data.
         /// Defaults to <see cref="CborConformanceMode.Strict" /> conformance mode.</param>
@@ -84,6 +86,27 @@ namespace Micial.Cbor.Writer
             _buffer = buffer;
         }
 
+        public CborWriter(
+            CborConformanceMode conformanceMode = CborConformanceMode.Strict,
+            bool convertIndefiniteLengthEncodings = false,
+            bool allowMultipleRootLevelValues = false,
+            int initialCapacity = DefaultCapacitySentinel)
+        {
+            CborConformanceModeHelpers.Validate(conformanceMode);
+
+            ConformanceMode = conformanceMode;
+            ConvertIndefiniteLengthEncodings = convertIndefiniteLengthEncodings;
+            AllowMultipleRootLevelValues = allowMultipleRootLevelValues;
+            _definiteLength = allowMultipleRootLevelValues ? null : (int?)1;
+
+            if (initialCapacity == DefaultCapacitySentinel || initialCapacity == 0)
+                _buffer = Array.Empty<byte>();
+            else if (initialCapacity < -1)
+                throw new ArgumentOutOfRangeException(nameof(initialCapacity));
+            else
+                _buffer = new byte[initialCapacity];
+        }
+
         /// <summary>Resets the writer to have no data, without releasing resources.</summary>
         public void Reset()
         {
@@ -94,6 +117,7 @@ namespace Micial.Cbor.Writer
                 {
                     _buffer.Span[i] = 0;
                 }
+
                 _offset = 0;
                 _nestedDataItems?.Clear();
                 _currentMajorType = null;
@@ -142,7 +166,8 @@ namespace Micial.Cbor.Writer
                 fixed (byte* ptr = &MemoryMarshal.GetReference(encodedValue))
                 {
                     using var manager = new PointerMemoryManager<byte>(ptr, encodedValue.Length);
-                    var reader = new CborReader(manager.Memory, conformanceMode: conformanceMode, allowMultipleRootLevelValues: false);
+                    var reader = new CborReader(manager.Memory, conformanceMode: conformanceMode,
+                        allowMultipleRootLevelValues: false);
 
                     try
                     {
@@ -158,7 +183,6 @@ namespace Micial.Cbor.Writer
                         throw new ArgumentException(MSR.Cbor_Writer_PayloadIsNotValidCbor);
                     }
                 }
-
             }
         }
 
@@ -236,7 +260,7 @@ namespace Micial.Cbor.Writer
                     newCapacity = requiredCapacity;
                 }
 
-                byte[] newBuffer = new byte[newCapacity]; 
+                byte[] newBuffer = new byte[newCapacity];
                 _buffer[.._offset].CopyTo(newBuffer);
                 _buffer = newBuffer;
             }
@@ -279,7 +303,8 @@ namespace Micial.Cbor.Writer
             {
                 if (_currentMajorType.HasValue)
                 {
-                    throw new InvalidOperationException(MSR.Format(MSR.Cbor_PopMajorTypeMismatch, (int)_currentMajorType));
+                    throw new InvalidOperationException(MSR.Format(MSR.Cbor_PopMajorTypeMismatch,
+                        (int)_currentMajorType));
                 }
                 else
                 {
@@ -363,7 +388,8 @@ namespace Micial.Cbor.Writer
                     if (initialByte.MajorType != _currentMajorType ||
                         initialByte.AdditionalInfo == CborAdditionalInfo.IndefiniteLength)
                     {
-                        throw new InvalidOperationException(MSR.Cbor_Writer_CannotNestDataItemsInIndefiniteLengthStrings);
+                        throw new InvalidOperationException(
+                            MSR.Cbor_Writer_CannotNestDataItemsInIndefiniteLengthStrings);
                     }
 
                     break;

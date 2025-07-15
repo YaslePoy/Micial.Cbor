@@ -21,7 +21,7 @@ namespace System.Formats.Cbor.Tests
         {
             byte[] expectedEncoding = hexExpectedEncoding.HexToByteArray();
             byte[] input = hexInput.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteByteString(input);
             AssertHelper.HexEqual(expectedEncoding, writer.Encode());
         }
@@ -29,7 +29,7 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void WriteByteString_NullValue_ShouldThrowArgumentNullException()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.Throws<ArgumentNullException>(() => writer.WriteByteString(null!));
         }
 
@@ -75,7 +75,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(nameof(CborWriter.WriteEndMap))]
         public static void WriteByteString_IndefiniteLength_NestedWrites_ShouldThrowInvalidOperationException(string opName)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteStartIndefiniteLengthByteString();
             Assert.Throws<InvalidOperationException>(() => Helpers.ExecOperation(writer, opName));
         }
@@ -86,7 +86,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(nameof(CborWriter.WriteEndMap))]
         public static void WriteByteString_IndefiniteLength_ImbalancedWrites_ShouldThrowInvalidOperationException(string opName)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteStartIndefiniteLengthByteString();
             Assert.Throws<InvalidOperationException>(() => Helpers.ExecOperation(writer, opName));
         }

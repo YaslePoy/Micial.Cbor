@@ -131,7 +131,7 @@
 //         [Property(Replay = ReplaySeed, MaxTest = MaxTests, Arbitrary = new[] { typeof(CborRandomGenerators) })]
 //         public static void Roundtrip_Double(CborConformanceMode mode, double input)
 //         {
-//             var writer = new CborWriter();
+//             var writer = new CborWriter(new Memory<byte>(new byte[512]));
 //             writer.WriteDouble(input);
 //             byte[] encoding = writer.Encode();
 //
@@ -143,7 +143,7 @@
 //         [Property(Replay = ReplaySeed, MaxTest = MaxTests, Arbitrary = new[] { typeof(CborRandomGenerators) })]
 //         public static void Roundtrip_Decimal(CborConformanceMode mode, decimal input)
 //         {
-//             var writer = new CborWriter();
+//             var writer = new CborWriter(new Memory<byte>(new byte[512]));
 //             writer.WriteDecimal(input);
 //             byte[] encoding = writer.Encode();
 //

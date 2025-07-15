@@ -64,7 +64,7 @@ namespace Micial.Cbor.Writer
         {
             EnsureWriteCapacity(1 + sizeof(float));
             WriteInitialByte(new CborInitialByte(CborMajorType.Simple, CborAdditionalInfo.Additional32BitData));
-            CborHelpers.WriteSingleBigEndian(_buffer.AsSpan(_offset), value);
+            CborHelpers.WriteSingleBigEndian(_buffer.Span.Slice(_offset), value);
             _offset += sizeof(float);
             AdvanceDataItemCounters();
         }
@@ -73,7 +73,7 @@ namespace Micial.Cbor.Writer
         {
             EnsureWriteCapacity(1 + sizeof(double));
             WriteInitialByte(new CborInitialByte(CborMajorType.Simple, CborAdditionalInfo.Additional64BitData));
-            CborHelpers.WriteDoubleBigEndian(_buffer.AsSpan(_offset), value);
+            CborHelpers.WriteDoubleBigEndian(_buffer.Span.Slice(_offset), value);
             _offset += sizeof(double);
             AdvanceDataItemCounters();
         }
@@ -125,7 +125,7 @@ namespace Micial.Cbor.Writer
             {
                 EnsureWriteCapacity(2);
                 WriteInitialByte(new CborInitialByte(CborMajorType.Simple, CborAdditionalInfo.Additional8BitData));
-                _buffer[_offset++] = (byte)value;
+                _buffer.Span[_offset++] = (byte)value;
             }
 
             AdvanceDataItemCounters();

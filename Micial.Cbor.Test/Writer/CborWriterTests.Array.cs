@@ -24,7 +24,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteArray_SimpleValues_HappyPath(object[] values, string expectedHexEncoding)
         {
             byte[] expectedEncoding = expectedHexEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Helpers.WriteArray(writer, values);
             byte[] actualEncoding = writer.Encode();
             AssertHelper.HexEqual(expectedEncoding, actualEncoding);
@@ -37,7 +37,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteArray_NestedValues_HappyPath(object[] values, string expectedHexEncoding)
         {
             byte[] expectedEncoding = expectedHexEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Helpers.WriteArray(writer, values);
             byte[] actualEncoding = writer.Encode();
             AssertHelper.HexEqual(expectedEncoding, actualEncoding);
@@ -118,7 +118,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(10)]
         public static void WriteArray_DefiniteLengthExceeded_ShouldThrowInvalidOperationException(int definiteLength)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteStartArray(definiteLength);
             for (int i = 0; i < definiteLength; i++)
             {
@@ -135,7 +135,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(10)]
         public static void WriteArray_DefiniteLengthExceeded_WithNestedData_ShouldThrowInvalidOperationException(int definiteLength)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteStartArray(definiteLength);
             for (int i = 0; i < definiteLength; i++)
             {
@@ -153,7 +153,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(10)]
         public static void WriteEndArray_DefiniteLengthNotMet_ShouldThrowInvalidOperationException(int definiteLength)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteStartArray(definiteLength);
             for (int i = 1; i < definiteLength; i++)
             {
@@ -169,7 +169,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(10)]
         public static void WriteEndArray_DefiniteLengthNotMet_WithNestedData_ShouldThrowInvalidOperationException(int definiteLength)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteStartArray(definiteLength);
             for (int i = 1; i < definiteLength; i++)
             {
@@ -187,7 +187,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(3)]
         public static void WriteEndArray_ImbalancedCall_ShouldThrowInvalidOperationException(int depth)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             for (int i = 0; i < depth; i++)
             {
                 writer.WriteStartMap(1);
@@ -202,7 +202,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(3)]
         public static void WriteEndArray_AfterStartMap_ShouldThrowInvalidOperationException(int depth)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
 
             for (int i = 0; i < depth; i++)
             {

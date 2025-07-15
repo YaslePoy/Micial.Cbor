@@ -28,7 +28,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteTag_SingleValue_HappyPath(ulong tag, object value, string hexExpectedEncoding)
         {
             byte[] expectedEncoding = hexExpectedEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteTag((CborTag)tag);
             Helpers.WriteValue(writer, value);
             AssertHelper.HexEqual(expectedEncoding, writer.Encode());
@@ -43,7 +43,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteTag_NestedTags_HappyPath(ulong[] tags, object value, string hexExpectedEncoding)
         {
             byte[] expectedEncoding = hexExpectedEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             foreach (ulong tag in tags)
             {
                 writer.WriteTag((CborTag)tag);
@@ -57,7 +57,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(new ulong[] { 1, 2, 3 })]
         public static void WriteTag_NoValue_ShouldThrowInvalidOperationException(ulong[] tags)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
 
             foreach (ulong tag in tags)
             {
@@ -70,7 +70,7 @@ namespace System.Formats.Cbor.Tests
         [Fact]
         public static void WriteTag_NoValueInNestedContext_ShouldThrowInvalidOperationException()
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
 
             writer.WriteStartArray(null);
             writer.WriteTag(CborTag.Uri);
@@ -84,7 +84,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteDateTimeOffset_SingleValue_HappyPath(string valueString, string expectedHexEncoding)
         {
             DateTimeOffset value = DateTimeOffset.Parse(valueString);
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteDateTimeOffset(value);
 
             byte[] encoding = writer.Encode();
@@ -99,7 +99,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(-315619200, "c13a12cff77f")]
         public static void WriteUnixTimeSeconds_Long_SingleValue_HappyPath(long value, string expectedHexEncoding)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteUnixTimeSeconds(value);
 
             byte[] encoding = writer.Encode();
@@ -116,7 +116,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(15870467036.15, "c1fb420d8fa0dee13333")]
         public static void WriteUnixTimeSeconds_Double_SingleValue_HappyPath(double value, string expectedHexEncoding)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteUnixTimeSeconds(value);
 
             byte[] encoding = writer.Encode();
@@ -129,7 +129,7 @@ namespace System.Formats.Cbor.Tests
         [InlineData(double.NegativeInfinity)]
         public static void WriteUnixTimeSeconds_Double_InvalidInput_ShouldThrowArgumentException(double value)
         {
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             Assert.Throws<ArgumentException>(() => writer.WriteUnixTimeSeconds(value));
         }
 
@@ -149,7 +149,7 @@ namespace System.Formats.Cbor.Tests
         {
             BigInteger value = BigInteger.Parse(valueString);
 
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteBigInteger(value);
 
             byte[] encoding = writer.Encode();
@@ -170,7 +170,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteDecimal_SingleValue_HappyPath(string stringValue, string expectedHexEncoding)
         {
             decimal value = decimal.Parse(stringValue, Globalization.CultureInfo.InvariantCulture);
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteDecimal(value);
             byte[] encoding = writer.Encode();
             AssertHelper.HexEqual(expectedHexEncoding.HexToByteArray(), encoding);

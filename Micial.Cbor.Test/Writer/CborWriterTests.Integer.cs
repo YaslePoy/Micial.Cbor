@@ -44,7 +44,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteInt64_SingleValue_HappyPath(long input, string hexExpectedEncoding)
         {
             byte[] expectedEncoding = hexExpectedEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteInt64(input);
             AssertHelper.HexEqual(expectedEncoding, writer.Encode());
         }
@@ -76,7 +76,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteInt32_SingleValue_HappyPath(int input, string hexExpectedEncoding)
         {
             byte[] expectedEncoding = hexExpectedEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteInt32(input);
             AssertHelper.HexEqual(expectedEncoding, writer.Encode());
         }
@@ -103,7 +103,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteUInt64_SingleValue_HappyPath(ulong input, string hexExpectedEncoding)
         {
             byte[] expectedEncoding = hexExpectedEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteUInt64(input);
             AssertHelper.HexEqual(expectedEncoding, writer.Encode());
         }
@@ -127,7 +127,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteUInt32_SingleValue_HappyPath(uint input, string hexExpectedEncoding)
         {
             byte[] expectedEncoding = hexExpectedEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteUInt32(input);
             AssertHelper.HexEqual(expectedEncoding, writer.Encode());
         }
@@ -145,7 +145,7 @@ namespace System.Formats.Cbor.Tests
         public static void WriteCborNegativeIntegerRepresentation_SingleValue_HappyPath(ulong input, string hexExpectedEncoding)
         {
             byte[] expectedEncoding = hexExpectedEncoding.HexToByteArray();
-            var writer = new CborWriter();
+            var writer = new CborWriter(new Memory<byte>(new byte[512]));
             writer.WriteCborNegativeIntegerRepresentation(input);
             AssertHelper.HexEqual(expectedEncoding, writer.Encode());
         }
