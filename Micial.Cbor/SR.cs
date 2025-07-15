@@ -1,6 +1,6 @@
-using System.Resources;
+using System;
 
-namespace System.Formats.Cbor
+namespace Micial.Cbor
 {
     internal static partial class MSR
     {

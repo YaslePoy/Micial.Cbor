@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 
-namespace System.Formats.Cbor
+namespace Micial.Cbor
 {
     /// <summary>
     ///   Represents CBOR Major Types, as defined in RFC7049 section 2.1.

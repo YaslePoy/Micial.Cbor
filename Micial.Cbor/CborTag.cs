@@ -1,7 +1,9 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace System.Formats.Cbor
+using System;
+
+namespace Micial.Cbor
 {
     /// <summary>Represents a CBOR semantic tag (major type 6).</summary>
     [CLSCompliant(false)]

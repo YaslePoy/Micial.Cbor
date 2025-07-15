@@ -1,6 +1,7 @@
+using System;
 using System.Buffers;
 
-namespace System.Formats.Cbor
+namespace Micial.Cbor
 {
     internal sealed unsafe class PointerMemoryManager<T> : MemoryManager<T> where T : struct
     {
