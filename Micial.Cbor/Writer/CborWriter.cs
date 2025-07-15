@@ -17,7 +17,7 @@ namespace Micial.Cbor.Writer
         private const int DefaultCapacitySentinel = -1;
         private static readonly ArrayPool<byte> s_bufferPool = ArrayPool<byte>.Create();
 
-        private byte[] _buffer;
+        private Memory<byte> _buffer;
         private int _offset;
 
         private Stack<StackFrame>? _nestedDataItems;
@@ -57,19 +57,7 @@ namespace Micial.Cbor.Writer
         /// <summary>Declares whether the writer has completed writing a complete root-level CBOR document, or sequence of root-level CBOR documents.</summary>
         /// <value><see langword="true" /> if the writer has completed writing a complete root-level CBOR document, or sequence of root-level CBOR documents; <see langword="false" /> otherwise.</value>
         public bool IsWriteCompleted => _currentMajorType is null && _itemsWritten > 0;
-
-        /// <summary>Initializes a new instance of <see cref="CborWriter" /> class using the specified configuration.</summary>
-        /// <param name="conformanceMode">One of the enumeration values that specifies the guidance on the conformance checks performed on the encoded data.
-        /// Defaults to <see cref="CborConformanceMode.Strict" /> conformance mode.</param>
-        /// <param name="convertIndefiniteLengthEncodings"><see langword="true" /> to enable automatically converting indefinite-length encodings into definite-length equivalents and allow use of indefinite-length write APIs in conformance modes that otherwise do not permit it; otherwise, <see langword="false" />.</param>
-        /// <param name="allowMultipleRootLevelValues"><see langword="true" /> to allow multiple root-level values to be written by the writer; otherwise, <see langword="false" />.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="conformanceMode" /> is not a defined <see cref="CborConformanceMode" />.</exception>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public CborWriter(CborConformanceMode conformanceMode, bool convertIndefiniteLengthEncodings, bool allowMultipleRootLevelValues)
-            : this(conformanceMode, convertIndefiniteLengthEncodings, allowMultipleRootLevelValues, DefaultCapacitySentinel)
-        {
-        }
-
+        
         /// <summary>Initializes a new instance of <see cref="CborWriter" /> class using the specified configuration.</summary>
         /// <param name="conformanceMode">One of the enumeration values that specifies the guidance on the conformance checks performed on the encoded data.
         /// Defaults to <see cref="CborConformanceMode.Strict" /> conformance mode.</param>
@@ -82,10 +70,10 @@ namespace Micial.Cbor.Writer
         /// <para><paramref name="initialCapacity"/> is not zero, positive, or the default value indicator -1.</para>
         /// </exception>
         public CborWriter(
+            Memory<byte> buffer,
             CborConformanceMode conformanceMode = CborConformanceMode.Strict,
             bool convertIndefiniteLengthEncodings = false,
-            bool allowMultipleRootLevelValues = false,
-            int initialCapacity = DefaultCapacitySentinel)
+            bool allowMultipleRootLevelValues = false)
         {
             CborConformanceModeHelpers.Validate(conformanceMode);
 
@@ -93,13 +81,7 @@ namespace Micial.Cbor.Writer
             ConvertIndefiniteLengthEncodings = convertIndefiniteLengthEncodings;
             AllowMultipleRootLevelValues = allowMultipleRootLevelValues;
             _definiteLength = allowMultipleRootLevelValues ? null : (int?)1;
-
-            if (initialCapacity == DefaultCapacitySentinel || initialCapacity == 0)
-                _buffer = Array.Empty<byte>();
-            else if (initialCapacity < -1)
-                throw new ArgumentOutOfRangeException(nameof(initialCapacity));
-            else
-                _buffer = new byte[initialCapacity];
+            _buffer = buffer;
         }
 
         /// <summary>Resets the writer to have no data, without releasing resources.</summary>
@@ -107,8 +89,11 @@ namespace Micial.Cbor.Writer
         {
             if (_offset > 0)
             {
-                Array.Clear(_buffer, 0, _offset);
-
+                // Array.Clear(_buffer, 0, _offset);
+                for (int i = 0; i < _offset; i++)
+                {
+                    _buffer.Span[i] = 0;
+                }
                 _offset = 0;
                 _nestedDataItems?.Clear();
                 _currentMajorType = null;
@@ -146,7 +131,7 @@ namespace Micial.Cbor.Writer
 
             if (!encodedValue.IsEmpty)
             {
-                encodedValue.CopyTo(_buffer.AsSpan(_offset));
+                encodedValue.CopyTo(_buffer.Span[_offset..]);
                 _offset += encodedValue.Length;
             }
 
@@ -227,7 +212,7 @@ namespace Micial.Cbor.Writer
                 throw new InvalidOperationException(MSR.Cbor_Writer_IncompleteCborDocument);
             }
 
-            return new ReadOnlySpan<byte>(_buffer, 0, _offset);
+            return _buffer[.._offset].Span;
         }
 
         private void EnsureWriteCapacity(int pendingCount)
@@ -251,8 +236,8 @@ namespace Micial.Cbor.Writer
                     newCapacity = requiredCapacity;
                 }
 
-                byte[] newBuffer = new byte[newCapacity];
-                new ReadOnlySpan<byte>(_buffer, 0, _offset).CopyTo(newBuffer);
+                byte[] newBuffer = new byte[newCapacity]; 
+                _buffer[.._offset].CopyTo(newBuffer);
                 _buffer = newBuffer;
             }
         }
@@ -384,7 +369,7 @@ namespace Micial.Cbor.Writer
                     break;
             }
 
-            _buffer[_offset++] = initialByte.InitialByte;
+            _buffer.Span[_offset++] = initialByte.InitialByte;
         }
 
         private void CompleteIndefiniteLengthWrite(CborMajorType type)
@@ -416,7 +401,7 @@ namespace Micial.Cbor.Writer
             {
                 // using indefinite-length encoding, append a break byte to the existing encoding
                 EnsureWriteCapacity(1);
-                _buffer[_offset++] = CborInitialByte.IndefiniteLengthBreakByte;
+                _buffer.Span[_offset++] = CborInitialByte.IndefiniteLengthBreakByte;
             }
         }
 
